@@ -1,0 +1,11 @@
+{
+  "name": "my-url-shortener",
+  "version": "1.0.0",
+  "description": "URL Shortener with GitHub, Vercel and Firebase",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  }
+}

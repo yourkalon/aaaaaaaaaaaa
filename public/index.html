@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mimtyllb URL Shortener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+        
+        .short-url {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+            word-break: break-all;
+            display: block;
+            margin: 10px 0;
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #28a745;
+        }
+        
+        .info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Mimtyllb URL Shortener</h1>
+        <p class="subtitle">আপনার দীর্ঘ লিংকগুলোকে ছোট ও সহজ করুন</p>
+        
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+        
+        <form id="urlForm">
+            <div class="form-group">
+                <label for="originalUrl">আপনার মূল URL:</label>
+                <input 
+                    type="url" 
+                    id="originalUrl" 
+                    placeholder="https://example.com/very-long-url-path..." 
+                    required
+                >
+                <div class="info">সম্পূর্ণ URL দিন (https:// সহ)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="customSlug">কাস্টম শর্ট লিংক (ঐচ্ছিক):</label>
+                <input 
+                    type="text" 
+                    id="customSlug" 
+                    placeholder="my-link"
+                    pattern="[a-zA-Z0-9_-]{2,}"
+                    title="শুধুমাত্র ইংরেজি letters, numbers, hyphen (-) এবং underscore (_) ব্যবহার করুন, কমপক্ষে ২ characters"
+                >
+                <div class="info">শুধুমাত্র ইংরেজি letters, numbers, hyphen (-) এবং underscore (_) ব্যবহার করুন</div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Creating your short URL...</p>
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                শর্ট লিংক তৈরি করুন
+            </button>
+        </form>
+        
+        <div class="result" id="result">
+            <h3>✅ সফলভাবে তৈরি হয়েছে!</h3>
+            <p><strong>মূল URL:</strong> <span id="originalUrlDisplay"></span></p>
+            <p><strong>শর্ট URL:</strong></p>
+            <a href="#" id="shortUrlDisplay" class="short-url" target="_blank"></a>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                এই লিংকটি ক্লিক করুন টেস্ট করতে অথবা কপি করে শেয়ার করুন
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const originalUrl = document.getElementById('originalUrl').value;
+            const customSlug = document.getElementById('customSlug').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            
+            // Reset states
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        originalUrl, 
+                        customSlug: customSlug || undefined 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success result
+                    document.getElementById('originalUrlDisplay').textContent = result.originalUrl;
+                    document.getElementById('shortUrlDisplay').textContent = result.shortUrl;
+                    document.getElementById('shortUrlDisplay').href = result.shortUrl;
+                    resultDiv.style.display = 'block';
+                    
+                    successDiv.textContent = result.message || 'URL successfully shortened!';
+                    successDiv.style.display = 'block';
+                    
+                    // Reset form
+                    document.getElementById('urlForm').reset();
+                } else {
+                    // Show error
+                    errorDiv.textContent = result.error || 'An error occurred';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please check your connection and try again.';
+                errorDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+            }
+        });
+
+        // URL parameters থেকে error messages handle করা
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const slug = urlParams.get('slug');
+        
+        if (error === 'URL_not_found' && slug) {
+            document.getElementById('errorMessage').textContent = 
+                `"${slug}" নামে কোনো শর্ট URL খুঁজে পাওয়া যায়নি। আপনি কি এটি তৈরি করতে চান?`;
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('customSlug').value = slug;
+        }
+    </script>
+</body>
+</html>
